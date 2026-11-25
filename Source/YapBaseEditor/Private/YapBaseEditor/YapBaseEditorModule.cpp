@@ -20,12 +20,12 @@ class FYapBaseEditorModule : public IModuleInterface
 public:
 	virtual void StartupModule() override
 	{
-		PostEngineInitHandle = FCoreDelegates::OnPostEngineInit.AddRaw(this, &FYapBaseEditorModule::EnsureAssetManagerRules);
+		PostEngineInitHandle = FCoreDelegates::GetOnPostEngineInit().AddRaw(this, &FYapBaseEditorModule::EnsureAssetManagerRules);
 	}
 
 	virtual void ShutdownModule() override
 	{
-		FCoreDelegates::OnPostEngineInit.Remove(PostEngineInitHandle);
+		FCoreDelegates::GetOnPostEngineInit().Remove(PostEngineInitHandle);
 	}
 
 private:
