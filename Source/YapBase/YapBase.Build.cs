@@ -17,5 +17,12 @@ public class YapBase : ModuleRules
 				"DeveloperSettings",
 			}
 		);
+
+		PrivateDependencyModuleNames.AddRange(
+			new string[]
+			{
+				"AssetRegistry",
+			}
+		);
 	}
 }
