@@ -21,7 +21,13 @@ public class YapBaseEditor : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
+				"InputCore",
 				"UnrealEd",
+				"AssetTools",
+				"AssetDefinition",
+				"PropertyEditor",
+				"GameplayTags",
+				"GameplayTagsEditor",
 				"YapBase",
 			}
 		);

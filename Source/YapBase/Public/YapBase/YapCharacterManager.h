@@ -6,13 +6,14 @@
 
 class AActor;
 class UYapCharacterAsset;
+struct FYapCharacterRuntimeDefinition;
 
 /**
  * Where characters are looked up for speech: by ID, to their definition (a character asset) and to the actor that
  * stands for them in the world, if there is one.
  *
  * Definitions are found among the project's character assets the first time they're asked for, or registered while
- * playing (RegisterCharacter, which also lets an ID stand for another asset). Actors are registered by their
+ * playing (RegisterCharacter, which also lets an ID stand for another asset, or RegisterCharacterDefinition). Actors are registered by their
  * UYapCharacterComponent.
  */
 UCLASS()
@@ -33,6 +34,10 @@ public:
 	/** Makes the ID stand for this character (its own ID if IDOverride is None), replacing what it stood for. */
 	UFUNCTION(BlueprintCallable, Category = "Yap|Character")
 	void RegisterCharacter(UYapCharacterAsset* Character, FName IDOverride = NAME_None);
+
+	/** Makes the ID stand for a new character made from Definition (an NPC's; see UYapCharacterComponent). */
+	UFUNCTION(BlueprintCallable, Category = "Yap|Character")
+	UYapCharacterAsset* RegisterCharacterDefinition(FName CharacterID, const FYapCharacterRuntimeDefinition& Definition);
 
 	/** Forgets a registered character. The ID then finds the character asset with that ID again, if there is one. */
 	UFUNCTION(BlueprintCallable, Category = "Yap|Character")

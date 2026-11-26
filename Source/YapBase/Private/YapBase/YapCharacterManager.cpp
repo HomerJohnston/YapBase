@@ -5,6 +5,7 @@
 #include "YapBase/YapAssets.h"
 #include "YapBase/YapBaseLog.h"
 #include "YapBase/YapCharacterAsset.h"
+#include "YapBase/YapCharacterRuntimeDefinition.h"
 
 UYapCharacterManager* UYapCharacterManager::Get(const UObject* WorldContext)
 {
@@ -57,6 +58,21 @@ void UYapCharacterManager::RegisterCharacter(UYapCharacterAsset* Character, FNam
 
 	const FName ID = IDOverride.IsNone() ? Character->GetCharacterID() : IDOverride;
 	Registered.Add(ID, Character);
+}
+
+UYapCharacterAsset* UYapCharacterManager::RegisterCharacterDefinition(FName CharacterID, const FYapCharacterRuntimeDefinition& Definition)
+{
+	if (CharacterID.IsNone())
+	{
+		UE_LOG(LogYapBase, Warning, TEXT("RegisterCharacterDefinition: no character ID was given."));
+		return nullptr;
+	}
+
+	UYapCharacterAsset* Character = NewObject<UYapCharacterAsset>(this, NAME_None, RF_Transient);
+	Character->SetCharacterID(CharacterID);
+	Definition.InitializeCharacter(Character);
+	Registered.Add(CharacterID, Character);
+	return Character;
 }
 
 void UYapCharacterManager::UnregisterCharacter(FName CharacterID)
