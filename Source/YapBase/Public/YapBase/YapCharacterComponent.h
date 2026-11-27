@@ -34,6 +34,9 @@ public:
 	FName Get(const UObject* Owner);
 
 	bool UsesProjectCharacter() const { return Identity_Character != nullptr; }
+
+	/** True if the ID is the Character's or the custom one: the same every time (not made up while playing). */
+	bool HasFixedID() const { return Identity_Character != nullptr || !Identity_Name.IsNone(); }
 	UYapCharacterAsset* GetCharacter() const { return Identity_Character; }
 };
 
@@ -86,6 +89,13 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "Yap|Character")
 	FName GetCharacterID();
+
+	/**
+	 * True if the character ID is the same every time (a project character, or a custom ID); false for one made up
+	 * while playing, which isn't saved and is different each time the actor begins play.
+	 */
+	UFUNCTION(BlueprintPure, Category = "Yap|Character")
+	bool HasFixedCharacterID() const { return Identity.HasFixedID(); }
 
 protected:
 	virtual void BeginPlay() override;
