@@ -1,5 +1,6 @@
 #include "YapBase/YapSubsystem.h"
 
+#include "Algo/Count.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
 #include "YapBase/YapBaseLog.h"
@@ -578,6 +579,24 @@ bool UYapSubsystem::StartPrompt(const FYapPromptRequest& Request, FYapPromptHand
 		return false;
 	}
 
+	TArray<bool> Shown;
+	Shown.Init(true, Request.Entries.Num());
+	for (const int32 Hidden : Request.HiddenEntries)
+	{
+		if (!Shown.IsValidIndex(Hidden))
+		{
+			OutError = FString::Printf(TEXT("The prompt has %d entries, so it can't hide entry %d."), Request.Entries.Num(), Hidden);
+			return false;
+		}
+		Shown[Hidden] = false;
+	}
+	const int32 NumShown = Algo::Count(Shown, true);
+	if (NumShown == 0)
+	{
+		OutError = TEXT("A prompt needs at least one entry shown.");
+		return false;
+	}
+
 	UYapSpeechConfig* Config = Request.Config ? Request.Config.Get() : GetDefaultSpeechConfig();
 	UYapCharacterManager* Characters = UYapCharacterManager::Get(this);
 	const bool bChildSafe = UsesChildSafe(*Broker, *Config);
@@ -619,17 +638,24 @@ bool UYapSubsystem::StartPrompt(const FYapPromptRequest& Request, FYapPromptHand
 	Active.Handle = Handle;
 	Active.Conversation = Request.Conversation;
 	Active.NumEntries = Entries.Num();
+	Active.Config = Config;
+	Active.Entries = Entries;
+	Active.Shown = Shown;
 	OutPrompt = Handle;
 
 	const FYapConversationHandle Conversation = Request.Conversation;
-	for (const FYapPromptEntryData& Entry : Entries)
+	for (int32 Index = 0; Index < Entries.Num(); ++Index)
 	{
-		ForEachHandler(Config, [&Entry](UObject* Handler) { IYapDialogueHandler::NotifyPromptEntryCreated(Handler, Entry); });
+		if (Shown[Index])
+		{
+			const FYapPromptEntryData& Entry = Entries[Index];
+			ForEachHandler(Config, [&Entry](UObject* Handler) { IYapDialogueHandler::NotifyPromptEntryCreated(Handler, Entry); });
+		}
 	}
 
-	if (Entries.Num() == 1 && Config->bAutoSelectLastPrompt)
+	if (NumShown == 1 && Config->bAutoSelectLastPrompt)
 	{
-		ChoosePromptEntry(Handle, 0);
+		ChoosePromptEntry(Handle, Shown.IndexOfByKey(true));
 	}
 	else
 	{
@@ -659,12 +685,54 @@ bool UYapSubsystem::ChoosePromptEntry(const FYapPromptHandle& Prompt, int32 Entr
 		return false;
 	}
 
+	if (Active->Shown.IsValidIndex(EntryIndex) && !Active->Shown[EntryIndex])
+	{
+		UE_LOG(LogYapBase, Warning, TEXT("ChoosePromptEntry: entry %d of the prompt is hidden, so it can't be chosen."), EntryIndex);
+		return false;
+	}
+
 	Active->Chosen = EntryIndex;
 	const FYapConversationHandle Conversation = Active->Conversation;
 
 	ForEachHandler(nullptr, [&](UObject* Handler) { IYapDialogueHandler::NotifyPromptEnded(Handler, Prompt, Conversation, EntryIndex); });
 	OnPromptEnded.Broadcast(Prompt, EntryIndex);
 	return true;
+}
+
+bool UYapSubsystem::SetPromptEntryShown(const FYapPromptHandle& Prompt, int32 EntryIndex, bool bShown)
+{
+	FYapActivePrompt* Active = FindPrompt(Prompt);
+	if (!Active || Active->Chosen != INDEX_NONE || !Active->Shown.IsValidIndex(EntryIndex) || !Active->Entries.IsValidIndex(EntryIndex))
+	{
+		return false;
+	}
+	if (Active->Shown[EntryIndex] == bShown)
+	{
+		return true;
+	}
+
+	Active->Shown[EntryIndex] = bShown;
+
+	// Copies: a handler may change the prompts.
+	const FYapPromptEntryData Entry = Active->Entries[EntryIndex];
+	const FYapConversationHandle Conversation = Active->Conversation;
+	UYapSpeechConfig* Config = Active->Config;
+
+	if (bShown)
+	{
+		ForEachHandler(Config, [&Entry](UObject* Handler) { IYapDialogueHandler::NotifyPromptEntryCreated(Handler, Entry); });
+	}
+	else
+	{
+		ForEachHandler(Config, [&](UObject* Handler) { IYapDialogueHandler::NotifyPromptEntryRemoved(Handler, Prompt, Conversation, EntryIndex); });
+	}
+	return true;
+}
+
+bool UYapSubsystem::IsPromptEntryShown(const FYapPromptHandle& Prompt, int32 EntryIndex) const
+{
+	const FYapActivePrompt* Active = Prompts.FindByPredicate([&Prompt](const FYapActivePrompt& Entry) { return Entry.Handle == Prompt; });
+	return Active && Active->Shown.IsValidIndex(EntryIndex) && Active->Shown[EntryIndex];
 }
 
 bool UYapSubsystem::GetPromptChoice(const FYapPromptHandle& Prompt, int32& OutChosen) const

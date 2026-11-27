@@ -47,6 +47,11 @@ void IYapDialogueHandler::NotifyPromptEntryCreated(UObject* Handler, const FYapP
 	YAP_NOTIFY(OnPromptEntryCreated(Entry), Execute_K2_PromptEntryCreated(Handler, Entry))
 }
 
+void IYapDialogueHandler::NotifyPromptEntryRemoved(UObject* Handler, const FYapPromptHandle& Prompt, const FYapConversationHandle& Conversation, int32 EntryIndex)
+{
+	YAP_NOTIFY(OnPromptEntryRemoved(Prompt, Conversation, EntryIndex), Execute_K2_PromptEntryRemoved(Handler, Prompt, Conversation, EntryIndex))
+}
+
 void IYapDialogueHandler::NotifyPromptReady(UObject* Handler, const FYapPromptHandle& Prompt, const FYapConversationHandle& Conversation)
 {
 	YAP_NOTIFY(OnPromptReady(Prompt, Conversation), Execute_K2_PromptReady(Handler, Prompt, Conversation))

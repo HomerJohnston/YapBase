@@ -232,6 +232,13 @@ struct YAPBASE_API FYapPromptRequest
 	/** At least one. Each one's Config and Conversation are ignored (the prompt's are used). */
 	UPROPERTY(BlueprintReadWrite, Category = "Yap")
 	TArray<FYapLineRequest> Entries;
+
+	/**
+	 * Entries the game isn't shown at first (their indices in Entries): it isn't sent them, and they can't be chosen,
+	 * until UYapSubsystem::SetPromptEntryShown shows them. At least one entry must be shown.
+	 */
+	UPROPERTY(BlueprintReadWrite, Category = "Yap")
+	TArray<int32> HiddenEntries;
 };
 
 // ================================================================================================

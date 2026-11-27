@@ -64,6 +64,16 @@ struct FYapActivePrompt
 	int32 NumEntries = 0;
 	/** INDEX_NONE until one is chosen. */
 	int32 Chosen = INDEX_NONE;
+
+	UPROPERTY()
+	TObjectPtr<UYapSpeechConfig> Config = nullptr;
+
+	/** What the game is sent for each entry (Prompt Entry Created), and whether it's shown now. */
+	UPROPERTY()
+	TArray<FYapPromptEntryData> Entries;
+
+	UPROPERTY()
+	TArray<bool> Shown;
 };
 
 USTRUCT()
@@ -115,7 +125,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Yap")
 	void AdvanceConversation(const FYapConversationHandle& Conversation);
 
-	/** The player's choice for a prompt (FYapPromptEntryData::EntryIndex). False if it isn't waiting for one, or the index is wrong. */
+	/** The player's choice for a prompt (FYapPromptEntryData::EntryIndex). False if it isn't waiting for one, or the index is wrong, or that entry is hidden. */
 	UFUNCTION(BlueprintCallable, Category = "Yap")
 	bool ChoosePromptEntry(const FYapPromptHandle& Prompt, int32 EntryIndex);
 
@@ -182,6 +192,18 @@ public:
 
 	/** False if there's no such prompt. Otherwise OutChosen is the chosen entry, or INDEX_NONE while it's waiting. */
 	bool GetPromptChoice(const FYapPromptHandle& Prompt, int32& OutChosen) const;
+
+	/**
+	 * Shows or hides an entry of a prompt that's waiting for the player: the game is sent Prompt Entry Created (to add
+	 * it to its choices, in EntryIndex order) or Prompt Entry Removed. A hidden entry can't be chosen. Nothing is sent
+	 * if it's already so. False if there's no such waiting prompt, or no such entry.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Yap")
+	bool SetPromptEntryShown(const FYapPromptHandle& Prompt, int32 EntryIndex, bool bShown);
+
+	/** Whether a waiting prompt's entry is shown (false if there's no such prompt or entry). */
+	UFUNCTION(BlueprintPure, Category = "Yap")
+	bool IsPromptEntryShown(const FYapPromptHandle& Prompt, int32 EntryIndex) const;
 
 	/** Takes a waiting prompt away (Prompt Ended with INDEX_NONE), and forgets it. */
 	void CancelPrompt(const FYapPromptHandle& Prompt);

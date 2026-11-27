@@ -46,6 +46,9 @@ protected:
 	UFUNCTION(BlueprintImplementableEvent, Category = "Yap", DisplayName = "Prompt Entry Created")
 	void K2_PromptEntryCreated(const FYapPromptEntryData& Entry);
 
+	UFUNCTION(BlueprintImplementableEvent, Category = "Yap", DisplayName = "Prompt Entry Removed")
+	void K2_PromptEntryRemoved(const FYapPromptHandle& Prompt, const FYapConversationHandle& Conversation, int32 EntryIndex);
+
 	UFUNCTION(BlueprintImplementableEvent, Category = "Yap", DisplayName = "Prompt Ready")
 	void K2_PromptReady(const FYapPromptHandle& Prompt, const FYapConversationHandle& Conversation);
 
@@ -65,8 +68,14 @@ public:
 	virtual void OnSpeechEnds(const FYapSpeechHandle& Speech, const FYapConversationHandle& Conversation, EYapSpeechResult Result) { K2_SpeechEnds(Speech, Conversation, Result); }
 	/** A conversation line is waiting for the player to advance (show a "continue" prompt). */
 	virtual void OnAwaitingAdvance(const FYapSpeechHandle& Speech, const FYapConversationHandle& Conversation) { K2_AwaitingAdvance(Speech, Conversation); }
-	/** One entry of a prompt: add it to your list of choices. */
+	/**
+	 * One entry of a prompt: add it to your list of choices. Before Prompt Ready, the prompt's entries, in order; after
+	 * it, an entry that's been shown while the prompt waits (UYapSubsystem::SetPromptEntryShown): put it in its place,
+	 * by EntryIndex.
+	 */
 	virtual void OnPromptEntryCreated(const FYapPromptEntryData& Entry) { K2_PromptEntryCreated(Entry); }
+	/** An entry of a waiting prompt has been hidden (UYapSubsystem::SetPromptEntryShown): take it off your choices. */
+	virtual void OnPromptEntryRemoved(const FYapPromptHandle& Prompt, const FYapConversationHandle& Conversation, int32 EntryIndex) { K2_PromptEntryRemoved(Prompt, Conversation, EntryIndex); }
 	/** Every entry of the prompt has been sent: show the choices. */
 	virtual void OnPromptReady(const FYapPromptHandle& Prompt, const FYapConversationHandle& Conversation) { K2_PromptReady(Prompt, Conversation); }
 	/** The prompt is done: an entry was chosen (its index), or it was taken away (INDEX_NONE). Take the choices down. */
@@ -81,6 +90,7 @@ public:
 	static void NotifySpeechEnds(UObject* Handler, const FYapSpeechHandle& Speech, const FYapConversationHandle& Conversation, EYapSpeechResult Result);
 	static void NotifyAwaitingAdvance(UObject* Handler, const FYapSpeechHandle& Speech, const FYapConversationHandle& Conversation);
 	static void NotifyPromptEntryCreated(UObject* Handler, const FYapPromptEntryData& Entry);
+	static void NotifyPromptEntryRemoved(UObject* Handler, const FYapPromptHandle& Prompt, const FYapConversationHandle& Conversation, int32 EntryIndex);
 	static void NotifyPromptReady(UObject* Handler, const FYapPromptHandle& Prompt, const FYapConversationHandle& Conversation);
 	static void NotifyPromptEnded(UObject* Handler, const FYapPromptHandle& Prompt, const FYapConversationHandle& Conversation, int32 ChosenEntry);
 };
