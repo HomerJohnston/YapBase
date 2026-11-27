@@ -174,6 +174,9 @@ public:
 	/** The integration won't ask about the line again: it's forgotten once its speech ends. */
 	void ReleaseLine(const FYapSpeechHandle& Speech);
 
+	/** The lines running now (for tools: the editor's graph nodes show where a line is up to while playing). */
+	const TArray<FYapActiveLine>& GetActiveLines() const { return Lines; }
+
 	/** Shows a prompt (it must be in an open conversation). False, with OutError, if the request is wrong. */
 	bool StartPrompt(const FYapPromptRequest& Request, FYapPromptHandle& OutPrompt, FString& OutError);
 
